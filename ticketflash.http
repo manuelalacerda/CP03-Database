@@ -1,0 +1,61 @@
+### Use a extensao "REST Client" (VS Code) ou importe no Insomnia.
+@base = http://localhost:8000
+# Pegue os ids reais em GET /eventos e GET /usuarios e cole abaixo:
+@evento_id = COLE_AQUI
+@usuario_id = COLE_AQUI
+
+### Listar usuarios
+GET {{base}}/usuarios
+
+### Criar usuario
+POST {{base}}/usuarios
+Content-Type: application/json
+
+{"nome": "Novo Aluno", "email": "novo@fiap.com.br", "cidade": "Sao Paulo"}
+
+### Listar eventos (filtros opcionais)
+GET {{base}}/eventos?categoria=Show&cidade=Sao Paulo
+
+### Criar evento
+POST {{base}}/eventos
+Content-Type: application/json
+
+{"nome": "Show Teste", "categoria": "Show", "data": "2026-12-20T21:00:00",
+ "local": {"cidade": "Sao Paulo", "endereco": "Rua A, 1"}, "atracoes": ["Banda X"],
+ "setores": [{"nome": "Pista", "preco": 100, "capacidade": 5}]}
+
+### Buscar evento (chame 2x: banco -> cache)
+GET {{base}}/eventos/{{evento_id}}
+
+### Atualizar evento (invalida o cache)
+PUT {{base}}/eventos/{{evento_id}}
+Content-Type: application/json
+
+{"nome": "Nome Atualizado"}
+
+### Remover evento
+DELETE {{base}}/eventos/{{evento_id}}
+
+### Ranking top 5
+GET {{base}}/eventos/ranking
+
+### Faturamento por evento
+GET {{base}}/relatorios/faturamento
+
+### Ocupacao por setor
+GET {{base}}/relatorios/ocupacao/{{evento_id}}
+
+### explain() do indice composto
+GET {{base}}/admin/explain?categoria=Show
+
+### Reservar (chame 11x seguidas para ver o 429)
+POST {{base}}/reservas
+Content-Type: application/json
+
+{"usuarioId": "{{usuario_id}}", "eventoId": "{{evento_id}}", "setor": "Pista", "quantidade": 2}
+
+### Confirmar pedido (410 se a reserva expirou)
+POST {{base}}/pedidos/confirmar
+Content-Type: application/json
+
+{"usuarioId": "{{usuario_id}}", "eventoId": "{{evento_id}}", "setor": "Pista"}

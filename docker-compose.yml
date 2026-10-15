@@ -1,0 +1,33 @@
+services:
+  mongo:
+    image: mongo:7
+    ports: ["27017:27017"]
+    volumes: [mongo_data:/data/db]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    ports: ["8000:8000"]
+    environment:
+      MONGO_URL: mongodb://mongo:27017
+      MONGO_DB: ticketflash
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      mongo: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+volumes:
+  mongo_data:
