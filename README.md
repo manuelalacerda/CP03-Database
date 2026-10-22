@@ -1,10 +1,11 @@
 # TicketFlash — MongoDB + Redis com Python
 
-**Integrantes (preencher):**
+**Integrantes:**
 
-| RM | Nome |
-|----|------|
-|    |      |
+| RM | Nome | Turma |
+|----|------|------|
+| RM564887 | Manuela de Lacerda Soares |2TDSPG|
+| RM563829 | Sofia Siqueira Fontes |2TDSPG|
 
 ## Como executar
 ```bash
@@ -56,12 +57,23 @@ Requisições de teste: `ticketflash.http` (VS Code REST Client; também import�
 - Capacidade garantida no filtro do `update_one` (`$expr` + `$inc` com `arrayFilters`); se o pedido falhar ao gravar, o incremento é desfeito.
 
 ## Requisito 3 — Índices e explain()
-Índices criados em `app/db.py`: `usuarios.email` (único), `eventos (categoria, data)` (composto), `pedidos.usuarioId`
-(+ `eventos.local.cidade`).
+Índices criados pelo código em `app/db.py` (função `criar_indices()`, executada na inicialização da API):
 
-Gerar a saída: `curl "http://localhost:8000/admin/explain?categoria=Show"`
+| Coleção | Índice | Tipo |
+|---|---|---|
+| `usuarios` | `email` (`uniq_email`) | único |
+| `eventos` | `categoria` + `data` (`categoria_data`) | composto |
+| `pedidos` | `usuarioId` (`pedidos_usuario`) | simples |
+| `eventos` | `local.cidade` (`eventos_cidade`) | simples (extra, para o filtro por cidade) |
 
-> **COLE AQUI A SAÍDA REAL DO SEU AMBIENTE.** Resultado esperado (formato):
+### Como gerar o explain()
+Com o ambiente no ar, a consulta `find({categoria: "Show", data: {$gte: ...}}).sort("data", 1)` é explicada pelo endpoint:
+
+```bash
+curl "http://localhost:8000/admin/explain?categoria=Show"
+```
+
+### Saída do explain()
 ```json
 {
   "stage": "FETCH",
@@ -73,4 +85,8 @@ Gerar a saída: `curl "http://localhost:8000/admin/explain?categoria=Show"`
   }
 }
 ```
-`IXSCAN` (e não `COLLSCAN`) mostra que o índice composto atende o filtro e a ordenação.
+
+### Leitura do plano
+- `IXSCAN` em `categoria_data`: o MongoDB percorreu o índice composto em vez de ler a coleção inteira (`COLLSCAN`).
+- O índice atende o filtro por `categoria`, o intervalo em `data` e a ordenação por `data`, sem etapa `SORT` em memória.
+- `FETCH` vem depois: só os documentos encontrados no índice são buscados.
